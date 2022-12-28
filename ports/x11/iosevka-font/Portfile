@@ -1,20 +1,20 @@
 PortSystem                  1.0
+PortGroup                   github 1.0
 
+github.setup                be5invis Iosevka 17.0.2
 name                        iosevka-font
-version                     17.0.2
 categories                  fonts
 license                     SIL Open Font License 1.1
-maintainers                 openmaintainer
+maintainers                 @dive openmaintainer
 description                 Versatile typeface for code.
 long_description            {*}${description} \
                             Iosevka is an open-source, sans-serif + slab-serif, monospace \
                             + quasi‑proportional typeface family, designed for writing code, \
                             using in terminals, and preparing technical documents.
 platforms                   darwin
-homepage                    https://github.com/be5invis/Iosevka
 
-master_sites                ${homepage}/releases/download/v${version}/
-distname                    super-ttc-iosevka-${version}
+github.tarball_from         releases
+distname                    super-ttc-iosevka-${github.version}
 use_zip                     yes
 
 supported_archs             noarch
