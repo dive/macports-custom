@@ -1,0 +1,37 @@
+PortSystem                  1.0
+
+name                        iosevka-font
+version                     17.0.2
+categories                  fonts
+license                     SIL Open Font License 1.1
+maintainers                 openmaintainer
+description                 Versatile typeface for code.
+long_description            {*}${description} \
+                            Iosevka is an open-source, sans-serif + slab-serif, monospace \
+                            + quasi‑proportional typeface family, designed for writing code, \
+                            using in terminals, and preparing technical documents.
+platforms                   darwin
+homepage                    https://github.com/be5invis/Iosevka
+
+master_sites                ${homepage}/releases/download/v${version}/
+distname                    super-ttc-iosevka-${version}
+use_zip                     yes
+
+supported_archs             noarch
+use_configure               no
+extract.dir                 ${workpath}/${distname}
+
+# FIXME: To fix the violation, we need to introduce ${fonts_dir}, like ${applications_dir}
+destroot.violate_mtree      yes
+
+checksums                   rmd160  c752b01880280f2d8831386d6c4550e99c1575d0 \
+                            sha256  c56a3d9667ac69a0ceaae256f8cd85a56305feb23b5c78e96bc106326c924baf \
+                            size    64747988
+
+build {}
+
+destroot {
+    set fontsdir ${destroot}/Library/Fonts/MacPorts/${name}
+    xinstall -d -m 755 ${fontsdir}
+    xinstall -m 644 ${worksrcpath}/iosevka.ttc ${fontsdir}
+}
