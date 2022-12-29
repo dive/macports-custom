@@ -1,0 +1,92 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem      1.0
+
+name            emacs-plus
+categories      editors aqua
+license         GPL-3+
+maintainers     @dive openmaintainer
+description     The GNU Emacs text editor
+long_description \
+    GNU Emacs is a self-documenting, customizable, extensible real-time \
+    display editor. Users new to Emacs will be able to use basic \
+    features fairly rapidly by studying the tutorial and using the \
+    self-documentation features. Emacs also has an extensive \
+    interactive manual browser. It is easily extensible since its \
+    editing commands are written in Lisp.
+
+platforms       darwin
+homepage        https://www.gnu.org/software/emacs/emacs.html
+
+PortGroup       github 1.0
+github.setup    emacs-mirror emacs 38c35bf0f6a938001dfecbe439addf8fb62897c6
+epoch           0
+version         20221229
+master_sites    ${github.master_sites}
+
+checksums \
+    rmd160  09df56580b9c53d43b17159b10b6b6df08b445af \
+    sha256  1b1faea52bdfe7a7248cd30a9224402e3f8cdd7bb64c51578f4775f146a959ff \
+    size    46897441
+
+universal_variant   no
+
+use_autoreconf      yes
+autoreconf.cmd      ./autogen.sh
+autoreconf.args     all
+
+depends_build \
+    port:autoconf \
+    port:automake \
+    port:libtool \
+    port:pkgconfig \
+    port:texinfo
+
+configure.args  \
+    --with-ns \
+    --with-gnutls \
+    --with-libgmp \
+    --with-json \
+    --with-xml2 \
+    --with-modules \
+    --with-lcms2 \
+    --with-rsvg \
+    --with-sqlite3 \
+    --with-webp \
+    --with-tree-sitter \
+    --without-harfbuzz \
+    --disable-silent-rules \
+    --infodir ${prefix}/share/info/${name}
+
+depends_lib \
+    port:gmp \
+    path:lib/pkgconfig/gnutls.pc:gnutls \
+    port:jansson \
+    port:libxml2 \
+    port:ncurses \
+    port:sqlite3 \
+    port:webp \
+    port:tree-sitter \
+    port:lcms2
+
+destroot.destdir {}
+
+post-destroot {
+    set app_name "EmacsPlus.app"; # To avoid conflicts with MacPorts official packages
+    move ${worksrcpath}/nextstep/Emacs.app ${destroot}${applications_dir}/${app_name}
+
+    set site_lisp ${destroot}${applications_dir}/${app_name}/Contents/Resources/site-lisp
+    xinstall -d ${site_lisp}
+    file copy ${filespath}/site-start.el ${site_lisp}
+    reinplace "s|__PREFIX__|${prefix}|g" ${site_lisp}/site-start.el
+}
+
+variant nativecomp description {Builds Emacs with native compilation support and enabled AOT} {
+    set gcc_v                      12
+    depends_lib-append             port:gcc${gcc_v}
+    configure.args-append          --with-native-compilation=aot
+    compiler.cpath-prepend         ${prefix}/include/gcc${gcc_v}
+    compiler.library_path-prepend  ${prefix}/lib/gcc${gcc_v}
+    configure.ldflags-append       "-Wl,-rpath ${prefix}/lib/gcc${gcc_v}"
+}
+default_variants-append +nativecomp
