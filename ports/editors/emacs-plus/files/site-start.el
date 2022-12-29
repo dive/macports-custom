@@ -14,3 +14,7 @@
 ;; Use the OS X Emoji font for Emoticons
 (when (fboundp 'set-fontset-font)
   (set-fontset-font t 'emoji '("Apple Color Emoji" . "iso10646-1") nil 'prepend))
+
+;; Grammar modules for tree-sitter
+(with-eval-after-load 'treesit
+  (add-to-list 'treesit-extra-load-path "__PREFIX__/share/emacs/tree-sitter-modules"))

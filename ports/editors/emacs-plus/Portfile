@@ -1,28 +1,22 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
-PortSystem      1.0
+PortSystem          1.0
 
-name            emacs-plus
-categories      editors aqua
-license         GPL-3+
-maintainers     @dive openmaintainer
-description     The GNU Emacs text editor
-long_description \
-    GNU Emacs is a self-documenting, customizable, extensible real-time \
-    display editor. Users new to Emacs will be able to use basic \
-    features fairly rapidly by studying the tutorial and using the \
-    self-documentation features. Emacs also has an extensive \
-    interactive manual browser. It is easily extensible since its \
-    editing commands are written in Lisp.
+name                emacs-plus
+categories          editors aqua
+license             GPL-3+
+maintainers         @dive openmaintainer
+description         The GNU Emacs text editor
+long_description    Emacs is the advanced, extensible, customizable, self-documenting editor.
 
-platforms       darwin
-homepage        https://www.gnu.org/software/emacs/emacs.html
+platforms           darwin
+homepage            https://www.gnu.org/software/emacs/emacs.html
 
-PortGroup       github 1.0
-github.setup    emacs-mirror emacs 38c35bf0f6a938001dfecbe439addf8fb62897c6
-epoch           0
-version         20221229
-master_sites    ${github.master_sites}
+PortGroup           github 1.0
+github.setup        emacs-mirror emacs 38c35bf0f6a938001dfecbe439addf8fb62897c6
+epoch               0
+version             20221229
+master_sites        ${github.master_sites}
 
 checksums \
     rmd160  09df56580b9c53d43b17159b10b6b6df08b445af \
@@ -53,7 +47,6 @@ configure.args  \
     --with-rsvg \
     --with-sqlite3 \
     --with-webp \
-    --with-tree-sitter \
     --without-harfbuzz \
     --disable-silent-rules \
     --infodir ${prefix}/share/info/${name}
@@ -66,20 +59,9 @@ depends_lib \
     port:ncurses \
     port:sqlite3 \
     port:webp \
-    port:tree-sitter \
     port:lcms2
 
-destroot.destdir {}
-
-post-destroot {
-    set app_name "EmacsPlus.app"; # To avoid conflicts with MacPorts official packages
-    move ${worksrcpath}/nextstep/Emacs.app ${destroot}${applications_dir}/${app_name}
-
-    set site_lisp ${destroot}${applications_dir}/${app_name}/Contents/Resources/site-lisp
-    xinstall -d ${site_lisp}
-    file copy ${filespath}/site-start.el ${site_lisp}
-    reinplace "s|__PREFIX__|${prefix}|g" ${site_lisp}/site-start.el
-}
+# Variants
 
 variant nativecomp description {Builds Emacs with native compilation support and enabled AOT} {
     set gcc_v                      12
@@ -90,3 +72,91 @@ variant nativecomp description {Builds Emacs with native compilation support and
     configure.ldflags-append       "-Wl,-rpath ${prefix}/lib/gcc${gcc_v}"
 }
 default_variants-append +nativecomp
+
+variant treesitter description {Builds Emacs with tree-sitter support and embed available modules} {
+    depends_build-append           port:git
+    depends_lib-append             port:tree-sitter
+    configure.args-append          --with-tree-sitter
+}
+default_variants-append +treesitter
+
+# Phases
+
+destroot.destdir {}
+post-destroot {
+    set app_name "EmacsPlus.app"; # To avoid conflicts with MacPorts official packages
+    move ${worksrcpath}/nextstep/Emacs.app ${destroot}${applications_dir}/${app_name}
+
+    set site_lisp ${destroot}${applications_dir}/${app_name}/Contents/Resources/site-lisp
+    xinstall -d ${site_lisp}
+    file copy ${filespath}/site-start.el ${site_lisp}
+    reinplace "s|__PREFIX__|${prefix}|g" ${site_lisp}/site-start.el
+}
+
+pre-install {
+    if {[variant_isset treesitter]} {
+        global tspath tsdylibpath
+        set tspath ${workpath}/tree-sitter-modules
+        xinstall -d ${tspath}
+        set tsdylibpath ${tspath}/dist
+        xinstall -d ${tsdylibpath}
+
+        proc prepare-dylib {repo_url lang_name {src_prefix .}} {
+            global prefix tspath tsdylibpath
+            set module_name "tree-sitter-${lang_name}"
+            set module_path ${tspath}/${module_name}
+            set src_dir ${module_path}/${src_prefix}/src
+
+            set repo_exists [file exists ${module_path}]
+            if {${repo_exists} != 1} {
+                system -W ${tspath} "${prefix}/bin/git clone --depth=1 --quiet ${repo_url} ${module_path}"
+            }
+
+            file copy ${module_path}/${src_prefix}/grammar.js ${src_dir}
+            system -W ${src_dir} "cc -fPIC -c -I. parser.c"
+
+            if [file exists ${src_dir}/scanner.c] {
+                system -W ${src_dir} "cc -fPIC -c -I. scanner.c"
+            } elseif [file exists ${src_dir}/scanner.cc] {
+                system -W ${src_dir} "c++ -fPIC -I. -c scanner.cc"
+            }
+
+            if [file exists ${src_dir}/scanner.cc] {
+                system -W ${src_dir} "c++ -fPIC -shared *.o -o libtree-sitter-${lang_name}.dylib"
+            } else {
+                system -W ${src_dir} "cc -fPIC -shared *.o -o libtree-sitter-${lang_name}.dylib"
+            }
+
+            copy ${src_dir}/libtree-sitter-${lang_name}.dylib ${tsdylibpath}
+        }
+
+        # Check https://tree-sitter.github.io/tree-sitter/ for available languages
+        prepare-dylib "https://github.com/WhatsApp/tree-sitter-erlang/"       erlang
+        prepare-dylib "https://github.com/Wilfred/tree-sitter-elisp"          elisp
+        prepare-dylib "https://github.com/ikatyang/tree-sitter-markdown"      markdown
+        prepare-dylib "https://github.com/ikatyang/tree-sitter-yaml"          yaml
+        prepare-dylib "https://github.com/milisims/tree-sitter-org"           org
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-bash"       bash
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-c"          c
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-c-sharp"    c-sharp
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-cpp"        cpp
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-css"        css
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-go"         go
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-html"       html
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-java"       java
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-javascript" javascript
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-json"       json
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-php"        php
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-python"     python
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-ruby"       ruby
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-rust"       rust
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-scala"      scala
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-swift"      swift
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-typescript" typescript typescript
+        prepare-dylib "https://github.com/tree-sitter/tree-sitter-typescript" tsx        tsx
+
+        set modules_dest ${destroot}${prefix}/share/emacs/tree-sitter-modules
+        xinstall -d ${modules_dest}
+        xinstall {*}[glob ${tsdylibpath}/*.dylib] ${modules_dest}
+    }
+}
