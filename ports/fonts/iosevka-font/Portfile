@@ -1,37 +1,38 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
 PortSystem                  1.0
 PortGroup                   github 1.0
 
-github.setup                be5invis Iosevka 17.0.2
 name                        iosevka-font
+github.setup                be5invis Iosevka 17.0.2 v
+github.tarball_from         releases
+use_configure               no
+distfiles                   super-ttc-iosevka-${github.version}.zip
+use_zip                     yes
+
 categories                  fonts
 license                     SIL Open Font License 1.1
 maintainers                 @dive openmaintainer
-description                 Versatile typeface for code.
-long_description            {*}${description} \
-                            Iosevka is an open-source, sans-serif + slab-serif, monospace \
-                            + quasi‑proportional typeface family, designed for writing code, \
-                            using in terminals, and preparing technical documents.
 platforms                   darwin
+description                 Versatile typeface for code.
+long_description \
+    {*}${description} \
+    Iosevka is an open-source, sans-serif + slab-serif, monospace \
+    + quasi‑proportional typeface family, designed for writing code, \
+    using in terminals, and preparing technical documents.
 
-github.tarball_from         releases
-distname                    super-ttc-iosevka-${github.version}
-use_zip                     yes
-
-supported_archs             noarch
-use_configure               no
-extract.dir                 ${workpath}/${distname}
+checksums \
+    rmd160  c752b01880280f2d8831386d6c4550e99c1575d0 \
+    sha256  c56a3d9667ac69a0ceaae256f8cd85a56305feb23b5c78e96bc106326c924baf \
+    size    64747988
 
 # FIXME: To fix the violation, we need to introduce ${fonts_dir}, like ${applications_dir}
 destroot.violate_mtree      yes
-
-checksums                   rmd160  c752b01880280f2d8831386d6c4550e99c1575d0 \
-                            sha256  c56a3d9667ac69a0ceaae256f8cd85a56305feb23b5c78e96bc106326c924baf \
-                            size    64747988
 
 build {}
 
 destroot {
     set fontsdir ${destroot}/Library/Fonts/MacPorts/${name}
     xinstall -d -m 755 ${fontsdir}
-    xinstall -m 644 ${worksrcpath}/iosevka.ttc ${fontsdir}
+    xinstall -m 644 ${workpath}/iosevka.ttc ${fontsdir}
 }
