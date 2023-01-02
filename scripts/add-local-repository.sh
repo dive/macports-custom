@@ -14,5 +14,4 @@ echo "$(awk -v path="$PORT_ROOT" '
 { print }
 ' "$PORT_SOURCES")" > "$PORT_SOURCES"
 
-
-
+cat "$PORT_SOURCES"
