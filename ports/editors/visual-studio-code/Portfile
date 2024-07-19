@@ -1,0 +1,48 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem                  1.0
+
+name                        visual-studio-code
+categories                  editor
+platforms                   darwin
+license                     Microsoft Software License
+maintainers                 @dive openmaintainer
+long_description            Features include support for debugging, syntax highlighting, intelligent \
+                            code completion, snippets, code refactoring, and embedded Git. Users \
+                            can change the theme, keyboard shortcuts, preferences, and install \
+                            extensions that add additional functionality. 
+homepage                    https://code.visualstudio.com/
+supported_archs             arm64 x86_64
+use_configure               no
+use_zip                     true
+extract.suffix              ""
+
+if {$subport eq $name} {
+    description             A source-code editor made by Microsoft with the Electron Framework.
+    version                 1.74.3
+    master_sites            https://update.code.visualstudio.com/${version}/${os.platform}-universal/
+    distfiles               stable
+
+    checksums               rmd160 ff1ccfa468167d3f592f71d7d6d0164d405420f0 \
+                            sha256 c49606fcb2e800d0fcb54395bce519ca1c6044634c94a7da38eeb437d43ab650 \
+                            size   129976508
+}
+
+subport ${name}-insiders {
+    description             Insiders version has the most recent code pushes and may lead to the occasional broken build.
+    version                 11012023
+    master_sites            https://code.visualstudio.com/sha/download?build=insider&os=${os_platform}-universal
+    distfiles               
+
+    checksums               rmd160 ff1ccfa468167d3f592f71d7d6d0164d405420f0 \
+                            sha256 c49606fcb2e800d0fcb54395bce519ca1c6044634c94a7da38eeb437d43ab650 \
+                            size   129976508
+}
+
+build {}
+
+destroot {
+    set app_name "Visual Studio Code.app"
+    xinstall -m 0755 -d ${destroot}${applications_dir}
+    copy ${workpath}/${app_name} ${destroot}${applications_dir}
+}

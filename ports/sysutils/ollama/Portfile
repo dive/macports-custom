@@ -1,0 +1,27 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem                  1.0
+
+name                        ollama
+categories                  sysutils
+platforms                   darwin
+license                     MIT License
+maintainers                 @dive openmaintainer
+description                 Runs LLMs locally.
+long_description            Get up and running with Llama 3, Mistral, Gemma, and other large \
+                            language models.
+homepage                    https://ollama.com
+supported_archs             arm64 x86_64
+
+PortGroup                   github 1.0
+github.setup                ollama ollama 0.1.38 v
+github.tarball_from         releases
+use_zip                     yes
+distname                    Ollama-darwin
+revision                    0
+
+checksums                   rmd160  a66d0aaa71f1ef76dabe46bcda190b72a97a4bf4 \
+                            sha256  89d5bd362d8fe5de2e9ea46c09773e1aa72745102421a46a5547cf47c29a1150 \
+                            size    184331386
+
+build {}
